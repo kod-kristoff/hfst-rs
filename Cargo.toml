@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "tools/*",
+    "libs/*",
+    "libhfst",
+]

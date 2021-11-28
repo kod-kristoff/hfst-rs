@@ -1,0 +1,12 @@
+[package]
+name = "hfst-pmatch2fst"
+version = "0.1.0"
+edition = "2021"
+description = "Compile regular expressions into transducer(s)"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = "2.33.3"
+hfst = { path = "../../libhfst" }
+pmatch = { path = "../../libs/pmatch" }
