@@ -39,8 +39,16 @@ impl Args {
         &self.0.matches.0.value_of("<jq filter>").unwrap()
     }
 
+    pub fn transducer(&self) -> &str {
+        &self.0.matches.0.value_of("TRANSDUCER").unwrap_or("<stdin>")
+    } 
+
     pub fn input(&self) -> &str {
-        &self.0.matches.0.value_of("FILE").unwrap_or("<stdin>")
+        &self.0.matches.0.value_of("infilename").unwrap_or("<stdin>")
+    } 
+
+    pub fn output(&self) -> &str {
+        &self.0.matches.0.value_of("outfilename").unwrap_or("<stdout>")
     } 
 }
 
