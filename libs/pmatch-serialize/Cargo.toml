@@ -1,11 +1,12 @@
 [package]
-name = "pmatch"
+name = "pmatch-serialize"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hfst = { path = "../hfst" }
+hfst-fs = { path = "../hfst-fs" }
 log = "0.4.14"
+pmatch = { path = "../pmatch" }
 thiserror = "1.0.25"

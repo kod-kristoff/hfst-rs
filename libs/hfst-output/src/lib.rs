@@ -1,6 +1,6 @@
-mod transducer;
+mod olw;
 
-pub use transducer::HfstTransducer;
+pub use olw::HfstOLWOutputStream;
 
 #[cfg(test)]
 mod tests {

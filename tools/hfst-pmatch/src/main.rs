@@ -1,23 +1,26 @@
 use std::fs;
 use std::io;
 
-use args::Args;
+use eyre::{WrapErr, Result};
 use log::LevelFilter;
+
 use pmatch::{PmatchContainer};
+use pmatch_serialize::PmatchHfst3;
 
 mod args;
 mod app;
+use args::Args;
 
-type Result<T> = ::std::result::Result<T, Box<dyn std::error::Error>>;
+//type Result<T> = ::std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() {
     if let Err(err) = Args::parse().and_then(try_main) {
-        eprintln!("{}", err);
+        eprintln!("{:#}", err);
         std::process::exit(2);
     }
 }
 
-fn try_main(args: Args) -> Result<()> {
+fn try_main(args: Args) -> eyre::Result<()> {
     let log_level = LevelFilter::Trace;
 
     env_logger::builder()
@@ -26,7 +29,10 @@ fn try_main(args: Args) -> Result<()> {
         .init();
 
     log::info!("Using transducer from file '{}'", args.transducer());
-    let container = PmatchContainer::from_name(args.transducer());
+    let container = PmatchHfst3::from_file(
+        fs::File::open(args.transducer())
+            .wrap_err_with(|| format!("Failed to read transducer from '{:}'", args.transducer()))?
+    )?;
 
     let mut reader: Box<dyn io::BufRead> = if args.input() == "<stdin>" {
         log::debug!("Reading input from <stdin>");

@@ -8,5 +8,9 @@ description = "Compile regular expressions into transducer(s)"
 
 [dependencies]
 clap = "2.33.3"
-hfst = { path = "../../libhfst" }
+env_logger = "0.8.4"
+eyre = "0.6.5"
+hfst = { path = "../../libs/hfst" }
+hfst-output = { path = "../../libs/hfst-output" }
+log = "0.4.14"
 pmatch = { path = "../../libs/pmatch" }

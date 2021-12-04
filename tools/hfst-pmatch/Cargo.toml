@@ -9,5 +9,7 @@ description = "perform matching/lookup on text streams"
 [dependencies]
 clap = "2.33.3"
 env_logger = "0.8.4"
+eyre = "0.6.5"
 log = "0.4.14"
 pmatch = { path = "../../libs/pmatch" }
+pmatch-serialize = { path = "../../libs/pmatch-serialize" }

@@ -7,7 +7,7 @@ use std::process;
 
 use clap;
 
-use crate::Result;
+use eyre::Result;
 use crate::app;
 
 /// The primary configuration object used throughout jq-rs. It provides a       
@@ -35,16 +35,24 @@ impl Args {
         &self.0.matches
     }
 
-    pub fn program(&self) -> &str {
-        &self.0.matches.0.value_of("<jq filter>").unwrap()
+    pub fn quiet(&self) -> bool {
+        self.0.matches.0.is_present("quiet")
     }
 
-    pub fn infilename(&self) -> &str {
-        &self.0.matches.0.value_of("INFILE").unwrap_or("<stdin>")
+    pub fn debug(&self) -> bool {
+        self.0.matches.0.is_present("debug")
+    }
+
+    pub fn verbose(&self) -> bool {
+        self.0.matches.0.is_present("verbose")
+    }
+
+    pub fn input(&self) -> &str {
+        &self.0.matches.0.value_of("infilename").unwrap_or("<stdin>")
     } 
 
-    pub fn outfilename(&self) -> &str {
-        &self.0.matches.0.value_of("OUTFILE").unwrap_or("<stdout>")
+    pub fn output(&self) -> &str {
+        &self.0.matches.0.value_of("outfilename").unwrap_or("<stdout>")
     } 
 }
 

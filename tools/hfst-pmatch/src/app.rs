@@ -24,6 +24,13 @@ pub fn app() -> App<'static, 'static>  {
                 .takes_value(true)
                 .value_name("OUTFILE")
                 .help("Write output transducer to OUTFILE"))
+        .arg(Arg::with_name("verbose")
+                .long("verbose")     
+                .help("print verbose output (NER stages) to standard error"))
+        .arg(Arg::with_name("debug")
+                .long("debug")       
+                .help("print debug output to standard error and do not remove temporary files (mainly useful for hfst-swener developers)"
+        ))
         .arg(Arg::with_name("newline")
                 .short("n")
                 .long("newline")
