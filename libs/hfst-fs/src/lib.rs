@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::io;
+use std::borrow::Cow;
 
 use byteorder::{BigEndian, LittleEndian};
 use thiserror::Error;
@@ -12,8 +13,6 @@ pub enum HfstHeaderError {
         expected: String,
         found: String
     },
-    #[error("Invalid header")]
-    InvalidHeaderStart(#[from] nom::Err<E>),
     #[error("Malformed header: {0}")]
     MalformedHeader(String),
     #[error("IO error: {0}")]
@@ -53,56 +52,44 @@ pub fn parse_hfst3_header(
                 expected: header1.to_owned(),
                 found: String::from_utf8_lossy(&buffer[0..header1.len()]).into_owned(),
             });
-    }
-            
         }
-    }
+    };
     log::debug!("Header size: {}", remaining_header_len);
-    if &buffer[0..header1.len()] != header1.as_bytes() {
-        log::warn!("Found unknown header: '{:?}'", &buffer[0..header1.len()]);
-        instream.seek(io::SeekFrom::Start(start_position))?;
-        return Err(HfstHeaderError::InvalidHeader {
-            expected: header1.to_owned(),
-            found: String::from_utf8_lossy(&buffer[0..header1.len()]).into_owned(),
-        });
-    }
-    
-    let remaining_header_len = io::Cursor::new(&buffer[5..7]).read_u16::<BigEndian>()?; 
-    log::trace!("remaining_header_len = {}", remaining_header_len);
-    // let _ = instream.by_ref().take(1).read(&mut buffer)?;
-    if &buffer[7..8] != b"\0" {
-        return Err(HfstHeaderError::MalformedHeader(
-            "Missing NULL after size".to_owned()
-        )); 
-    }
-    // if remaining_header_len as usize > BUFFER_SIZE {
-    //     unimplemented!();
-    // }
-    let mut buffer = vec![0; remaining_header_len as usize];
+    let mut buffer = vec![0u8; remaining_header_len as usize];
     let _ = instream.take(remaining_header_len as u64).read(&mut buffer)?;
-    // log::trace!("buffer = {:?}", &buffer);
-    // log::trace!("buffer = {:?}", String::from_utf8_lossy(&buffer));
-    // let _ = instream.by_ref().take(remaining_header_len as u64).read(&mut buffer)?;
-    if &buffer[(remaining_header_len as isize - 1) as usize..remaining_header_len as usize] != b"\0" {
-        return Err(HfstHeaderError::MalformedHeader(
-            "Missing NULL after header".to_owned()
-        )); 
-    }
-    let mut properties = HashMap::new();
+    let properties = match hash(&buffer) {
+        Ok((remaining, properties)) => {
+            log::debug!("remaining: {:?}", remaining);
+            properties
+        },
+        Err(error) => {
+            log::error!("Header error:\n{:?}", error);
+            println!("Header error:\n{:?}", error);
+            panic!("Error: {:?}", error);
+        }
+    };
+    let properties = properties.into_iter().collect();
     Ok(properties)
 }
-use nom::{IResult, do_parse, tag};
-use nom::number::complete::be_u16;
+use nom::{
+    branch::alt,
+    bytes::complete::{tag, take_until1},
+    combinator::{cut, map},
+    error::context,
+    multi::many1,
+    number::complete::be_u16,
+    sequence::{preceded, separated_pair, terminated},
+    IResult,
+};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Hfst;
 
-pub fn header(input: &[u8]) -> IResult<&[u8], Hfst> {
-    do_parse!(input,
-        tag!("HFST")    >>
-        tag!("\0")      >>
-        ( Hfst )
-    )
+pub fn header(i: &[u8]) -> IResult<&[u8], Hfst> {
+    map(terminated(
+        tag(b"HFST"),
+        tag(b"\0")
+    ), |_| Hfst {})(i)
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -110,27 +97,124 @@ pub struct HeaderSize {
     size: u16,
 }
 
-pub fn header_size(input: &[u8]) -> IResult<&[u8], HeaderSize> {
-    do_parse!(input,
-        size:   be_u16      >>
-                tag!("\0")  >>
-                ( HeaderSize { size } )
-    )
+pub fn header_size(i: &[u8]) -> IResult<&[u8], HeaderSize> {
+    map(terminated(
+        be_u16,
+        tag(b"\0")
+    ), |size| HeaderSize { size })(i)
 }
 
-pub fn static_header(input: &[u8]) -> IResult<&[u8], HeaderSize> {
-    do_parse!(input,
-                header          >>
-        size:   header_size     >>
-                ( size )
-    )
+pub fn static_header(i: &[u8]) -> IResult<&[u8], HeaderSize> {
+    preceded(
+        header,
+        header_size
+    )(i)
 }
+
+pub fn hash(i: &[u8]) -> IResult<&[u8], Vec<(String, String)>> {
+    context(
+        "map",
+        cut(
+            map(
+                many1(key_value),
+                |tuple_vec| {
+                    tuple_vec.into_iter().map(|(k, v)| (String::from(k), String::from(v))).collect()
+                }
+        ))
+    )(i)
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Nil;
+
+pub fn nil(i: &[u8]) -> IResult<&[u8], Nil> {
+    map(tag(b"\0"), |_| Nil)(i)
+}
+
+pub fn parse_zb_str<'a>(i: &'a [u8]) -> IResult<&'a [u8], &'a [u8]> {
+    take_until1(b"\0" as &[u8])(i)
+}
+
+pub fn zb_string(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    terminated(
+        parse_zb_str,
+        tag(b"\0")
+    )(i)
+}
+
+pub fn nullended_string(i: &[u8]) -> IResult<&[u8], Cow<str>> {
+    map(zb_string, |s| String::from_utf8_lossy(s).to_owned())(i)
+}
+
+pub fn nullended_string0(i: &[u8]) -> IResult<&[u8], Cow<str>> {
+    alt((
+        nullended_string,
+        map(nil, |_| Cow::from(""))
+    ))(i)
+}
+
+pub fn key_value(i: &[u8]) -> IResult<&[u8], (Cow<str>, Cow<str>)> {
+    separated_pair(nullended_string, tag(b""), nullended_string0)(i)
+}
+
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use nom::HexDisplay;
 
+    mod parsers {
+        use super::*;
+
+        #[test]
+        fn test_null() {
+            let res = nil(b"\0");
+            match res {
+                Ok(_) => {},
+                _ => {
+                    panic!("")
+                }
+            }
+        }
+
+        #[test]
+        fn valid_nonempty_zerobased_string() {
+            assert_eq!(zb_string(b"a\0"), Ok((&[] as &[u8], b"a" as &[u8])));
+        }
+
+        #[test]
+        fn valid_nonempty_nullended_string() {
+            assert_eq!(nullended_string(b"a\0"), Ok((&[] as &[u8], Cow::from("a"))));
+        }
+
+        #[test]
+        fn valid_nullended_string() {
+            assert_eq!(nullended_string0(b"a\0"), Ok((&[] as &[u8], Cow::from("a"))));
+            assert_eq!(nullended_string0(b"\0"), Ok((&[] as &[u8], Cow::from(""))));
+        }
+
+        #[test]
+        fn valid_parse_zb_str() {
+            assert_eq!(parse_zb_str(b"a\0"), Ok((b"\0" as &[u8], b"a" as &[u8])));
+        }
+
+        #[test]
+        fn valid_key_value() {
+            assert_eq!(
+                key_value(b"a\0b\0"),
+                Ok((
+                    &[] as &[u8],
+                    (Cow::from("a"), Cow::from("b"))
+            )));
+            assert_eq!(
+                key_value(b"ab\0\0"),
+                Ok((
+                    &[] as &[u8],
+                    (Cow::from("ab"), Cow::from(""))
+            )));
+        }
+    }
     #[test]
     fn it_works() {
         let result = 2 + 2;
