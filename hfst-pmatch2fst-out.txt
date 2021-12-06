@@ -1,0 +1,25 @@
+❯ ./tools/src/hfst-pmatch2fst --verbose --debug --input ../../kristoff/hfst-rs/tests/data/pmatch-streets-fr.txt --output ../../kristoff/hfst-rs/streets-fr.pmatch
+Reading from ../../kristoff/hfst-rs/tests/data/pmatch-streets-fr.txt, writing to ../../kristoff/hfst-rs/streets-fr.pmatch
+
+defined CapWord in 0.00 seconds
+defined StreetWordFr in 0.00 seconds
+defined DeFr in 0.00 seconds
+defined StreetFr in 0.00 seconds
+defined TOP in 0.00 seconds
+
+Compiling and harmonizing...
+Compiling TOP...
+| Compiling StreetFr...
+|| Compiling StreetWordFr...
+|| StreetWordFr compiled in 0.00 seconds with 19 states and 18 arcs
+|| Compiling DeFr...
+|| DeFr compiled in 0.00 seconds with 12 states and 31 arcs
+|| Compiling CapWord...
+|| CapWord compiled in 0.00 seconds with 2 states and 191 arcs
+| StreetFr compiled in 0.17 seconds with 28 states and 381 arcs
+TOP compiled in 0.17 seconds with 31 states and 384 arcs
+Everything compiled and harmonized in 0.17 seconds
+StreetFr fetched from cache
+Added automatic context separators in 0.01 seconds
+Building hfst-ol alphabet... built in 0.41 seconds
+Converting TOP... converted in 0.00 seconds
