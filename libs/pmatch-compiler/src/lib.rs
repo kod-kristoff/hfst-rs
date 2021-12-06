@@ -1,6 +1,6 @@
-mod container;
+mod compiler;
 
-pub use container::PmatchContainer;
+pub use compiler::PmatchCompiler;
 
 #[cfg(test)]
 mod tests {

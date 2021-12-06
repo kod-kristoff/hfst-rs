@@ -140,6 +140,7 @@ dependencies = [
  "hfst-output",
  "log",
  "pmatch",
+ "pmatch-compiler",
 ]
 
 [[package]]
@@ -204,6 +205,16 @@ version = "0.1.0"
 dependencies = [
  "hfst",
  "log",
+ "thiserror",
+]
+
+[[package]]
+name = "pmatch-compiler"
+version = "0.1.0"
+dependencies = [
+ "hfst",
+ "log",
+ "nom",
  "thiserror",
 ]
 

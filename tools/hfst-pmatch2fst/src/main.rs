@@ -6,7 +6,7 @@ use log::LevelFilter;
 use args::Args;
 use hfst;
 use hfst_output;
-use pmatch;
+use pmatch_compiler;
 
 mod args;
 mod app;
@@ -47,7 +47,7 @@ fn try_main(args: Args) -> eyre::Result<()> {
         args.output(),
     );
     let outstream = hfst_output::HfstOLWOutputStream::from_name(args.output());
-    let mut comp = pmatch::PmatchCompiler::new();
+    let mut comp = pmatch_compiler::PmatchCompiler::new();
     comp.set_verbose(args.verbose());
 
     process_stream(
@@ -58,7 +58,7 @@ fn try_main(args: Args) -> eyre::Result<()> {
 }
 
 fn process_stream(
-    comp: pmatch::PmatchCompiler,
+    comp: pmatch_compiler::PmatchCompiler,
     mut reader: Box<dyn io::Read>, 
     outstream: hfst_output::HfstOLWOutputStream
 ) -> eyre::Result<()> {

@@ -14,3 +14,4 @@ hfst = { path = "../../libs/hfst" }
 hfst-output = { path = "../../libs/hfst-output" }
 log = "0.4.14"
 pmatch = { path = "../../libs/pmatch" }
+pmatch-compiler = { path = "../../libs/pmatch-compiler" }
