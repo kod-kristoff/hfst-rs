@@ -1,135 +1,23 @@
-pub mod error;
-pub mod streaming;
-
 use std::collections::HashMap;
 use std::io;
 use std::borrow::Cow;
 
-use thiserror::Error;
+use crate::HfstHeaderError;
 
-pub use error::OwnedParseError;
-
-#[derive(Debug, Error)]
-pub enum HfstHeaderError {
-    #[error("Invalid header (expected: {expected:?}, got: {found:?})")]
-    InvalidHeader {
-        expected: String,
-        found: String
-    },
-    #[error("Malformed header: {0}")]
-    MalformedHeader(String),
-    #[error("IO error: {0}")]
-    IOError(#[from] io::Error),
-}
-
-pub trait ReadSeek: io::Read + io::Seek {}
-
-impl<T> ReadSeek for T
-    where T: io::Read + io::Seek
-{}
-
-pub fn parse_hfst3_header(
-    // instream: &mut fs::File,
-    instream: &mut dyn ReadSeek,
-) -> Result<HashMap<String, String>, HfstHeaderError> {
-    use io::{Read, Seek};
-    use byteorder::ReadBytesExt;
-
-    const BUFFER_SIZE: usize = 256;
-
-    log::trace!("Called parse_hfst3_header");
-    let start_position = instream.stream_position()?;
-
-    let header1 = "HFST";
-    let mut buffer = [0u8; BUFFER_SIZE];
-    let _ = instream.take(8).read(&mut buffer)?;
-    log::trace!("buffer = {:?}", &buffer[0..10]);
-    log::trace!("buffer = {:?}", String::from_utf8_lossy(&buffer[0..10]));
-    
-    let remaining_header_len = match static_header(&buffer[0..8]) {
-        Ok((_, header_size)) => header_size.size,
-        _ => {
-            log::warn!("Found unknown header: '{:?}'", &buffer[0..header1.len()]);
-            instream.seek(io::SeekFrom::Start(start_position))?;
-            return Err(HfstHeaderError::InvalidHeader {
-                expected: header1.to_owned(),
-                found: String::from_utf8_lossy(&buffer[0..header1.len()]).into_owned(),
-            });
-        }
-    };
-    log::debug!("Header size: {}", remaining_header_len);
-    let mut buffer = vec![0u8; remaining_header_len as usize];
-    let _ = instream.take(remaining_header_len as u64).read(&mut buffer)?;
-    let properties = match hash(&buffer) {
-        Ok((remaining, properties)) => {
-            log::debug!("remaining: {:?}", remaining);
-            properties
-        },
-        Err(error) => {
-            log::error!("Header error:\n{:?}", error);
-            println!("Header error:\n{:?}", error);
-            panic!("Error: {:?}", error);
-        }
-    };
-    let properties = properties.into_iter().collect();
-    Ok(properties)
-}
-
-pub fn parse_hfst3_header_le(
-    // instream: &mut fs::File,
-    instream: &mut dyn ReadSeek,
-) -> Result<HashMap<String, String>, HfstHeaderError> {
-    use io::{Read};
-
-    const BUFFER_SIZE: usize = 256;
-
-    log::trace!("Called parse_hfst3_header_le");
-    let start_position = instream.stream_position()?;
-
-    let header1 = "HFST";
-    let mut buffer = [0u8; BUFFER_SIZE];
-    let _ = instream.take(8).read(&mut buffer)?;
-    log::trace!("buffer = {:?}", &buffer[0..10]);
-    log::trace!("buffer = {:?}", String::from_utf8_lossy(&buffer[0..10]));
-    
-    let remaining_header_len = match static_header_le(&buffer[0..8]) {
-        Ok((_, header_size)) => header_size.size,
-        _ => {
-            log::warn!("Found unknown header: '{:?}'", &buffer[0..header1.len()]);
-            instream.seek(io::SeekFrom::Start(start_position))?;
-            return Err(HfstHeaderError::InvalidHeader {
-                expected: header1.to_owned(),
-                found: String::from_utf8_lossy(&buffer[0..header1.len()]).into_owned(),
-            });
-        }
-    };
-    log::debug!("Header size: {}", remaining_header_len);
-    let mut buffer = vec![0u8; remaining_header_len as usize];
-    let _ = instream.take(remaining_header_len as u64).read(&mut buffer)?;
-    let properties = match hash(&buffer) {
-        Ok((remaining, properties)) => {
-            log::debug!("remaining: {:?}", remaining);
-            properties
-        },
-        Err(error) => {
-            log::error!("Header error:\n{:?}", error);
-            println!("Header error:\n{:?}", error);
-            panic!("Error: {:?}", error);
-        }
-    };
-    let properties = properties.into_iter().collect();
-    Ok(properties)
-}
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_until1},
+    bytes::streaming::{tag, take_until1},
     combinator::{cut, map},
     error::context,
+    error::{ContextError, Error as NomError, ErrorKind, FromExternalError, ParseError},
     multi::many1,
-    number::complete::{be_u16, le_u16},
+    number::streaming::{be_u16, le_u16},
     sequence::{preceded, separated_pair, terminated},
     IResult,
 };
+
+use crate::OwnedParseError;
+
 
 pub fn le_hfst3_header(input: &[u8]) -> IResult<&[u8], HashMap<String, String>> {
     unimplemented!()
@@ -177,7 +65,7 @@ pub fn static_header_le(i: &[u8]) -> IResult<&[u8], HeaderSize> {
     )(i)
 }
 
-pub fn hash(i: &[u8]) -> IResult<&[u8], Vec<(String, String)>> {
+pub fn hash(i: &[u8]) -> IResult<&[u8], Vec<(String, String)>, OwnedParseError> {
     context(
         "map",
         cut(
@@ -193,33 +81,43 @@ pub fn hash(i: &[u8]) -> IResult<&[u8], Vec<(String, String)>> {
 #[derive(Debug, Eq, PartialEq)]
 pub struct Nil;
 
-pub fn nil(i: &[u8]) -> IResult<&[u8], Nil> {
-    map(tag(b"\0"), |_| Nil)(i)
+pub fn nil(i: &[u8]) -> IResult<&[u8], (), OwnedParseError> {
+    map(tag(b"\0"), |_| ())(i)
 }
 
-pub fn parse_zb_str<'a>(i: &'a [u8]) -> IResult<&'a [u8], &'a [u8]> {
+pub fn parse_zb_str<'a>(i: &'a [u8]) -> IResult<&'a [u8], &'a [u8], OwnedParseError> {
     take_until1(b"\0" as &[u8])(i)
 }
 
-pub fn zb_string(i: &[u8]) -> IResult<&[u8], &[u8]> {
+pub fn zb_string(i: &[u8]) -> IResult<&[u8], &[u8], OwnedParseError> {
     terminated(
         parse_zb_str,
         tag(b"\0")
     )(i)
 }
 
-pub fn nullended_string(i: &[u8]) -> IResult<&[u8], Cow<str>> {
+pub fn nullended_string(
+    i: &[u8]
+) -> IResult<&[u8], Cow<str>, OwnedParseError>
+// where
+//     E: nom::error::ParseError<&'a [u8]>,
+{
     map(zb_string, |s| String::from_utf8_lossy(s).to_owned())(i)
 }
 
-pub fn nullended_string0(i: &[u8]) -> IResult<&[u8], Cow<str>> {
+pub fn nullended_string0(
+    i: &[u8]
+) -> IResult<&[u8], Cow<str>, OwnedParseError>
+// where
+//     E: nom::error::ParseError<&'a [u8]>,
+{
     alt((
         nullended_string,
         map(nil, |_| Cow::from(""))
     ))(i)
 }
 
-pub fn key_value(i: &[u8]) -> IResult<&[u8], (Cow<str>, Cow<str>)> {
+pub fn key_value(i: &[u8]) -> IResult<&[u8], (Cow<str>, Cow<str>), OwnedParseError> {
     separated_pair(nullended_string, tag(b""), nullended_string0)(i)
 }
 

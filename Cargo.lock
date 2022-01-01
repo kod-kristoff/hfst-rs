@@ -38,6 +38,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
+name = "bufparser"
+version = "0.1.0"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -105,6 +112,24 @@ name = "hfst-fs"
 version = "0.1.0"
 dependencies = [
  "byteorder",
+ "log",
+ "nom",
+ "thiserror",
+]
+
+[[package]]
+name = "hfst-ol"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "thiserror",
+]
+
+[[package]]
+name = "hfst-ol-parser"
+version = "0.1.0"
+dependencies = [
+ "hfst-ol",
  "log",
  "nom",
  "thiserror",
@@ -194,6 +219,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "nom-bufreader"
+version = "0.2.0"
+source = "git+https://github.com/rust-bakery/nom-bufreader#c2e48f5b84ef5c330b0aebe1943361009f4c5c49"
+dependencies = [
+ "nom",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -204,8 +237,10 @@ name = "pmatch"
 version = "0.1.0"
 dependencies = [
  "hfst",
+ "hfst-ol",
  "log",
  "thiserror",
+ "unicode-segmentation",
 ]
 
 [[package]]
@@ -222,8 +257,13 @@ dependencies = [
 name = "pmatch-serialize"
 version = "0.1.0"
 dependencies = [
+ "bufparser",
  "hfst-fs",
+ "hfst-ol",
+ "hfst-ol-parser",
  "log",
+ "nom",
+ "nom-bufreader",
  "pmatch",
  "thiserror",
 ]
@@ -317,6 +357,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "unicode-segmentation"
+version = "1.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8895849a949e7845e06bd6dc1aa51731a103c42707010a5b591c0038fb73385b"
 
 [[package]]
 name = "unicode-width"

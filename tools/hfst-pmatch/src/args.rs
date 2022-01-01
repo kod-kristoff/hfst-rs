@@ -50,6 +50,10 @@ impl Args {
     pub fn output(&self) -> &str {
         &self.0.matches.0.value_of("outfilename").unwrap_or("<stdout>")
     } 
+
+    pub fn litte_endian(&self) -> bool {
+        self.0.matches.0.is_present("little-endian")
+    }
 }
 
 #[derive(Clone, Debug)]

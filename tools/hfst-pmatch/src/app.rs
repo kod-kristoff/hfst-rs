@@ -27,6 +27,9 @@ pub fn app() -> App<'static, 'static>  {
         .arg(Arg::with_name("verbose")
                 .long("verbose")     
                 .help("print verbose output (NER stages) to standard error"))
+        .arg(Arg::with_name("little-endian")
+                .long("little-endian")     
+                .help("parse hfst files as little endian"))
         .arg(Arg::with_name("debug")
                 .long("debug")       
                 .help("print debug output to standard error and do not remove temporary files (mainly useful for hfst-swener developers)"

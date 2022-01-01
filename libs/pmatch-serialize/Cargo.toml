@@ -6,7 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bufparser = { path = "../bufparser" }
 hfst-fs = { path = "../hfst-fs" }
+hfst-ol = { path = "../hfst-ol" }
+hfst-ol-parser = { path = "../hfst-ol-parser" }
 log = "0.4.14"
+nom = { version = "7.1", features = ["alloc"] }
+nom-bufreader = { git = "https://github.com/rust-bakery/nom-bufreader", default-features = false }
 pmatch = { path = "../pmatch" }
 thiserror = "1.0.25"
