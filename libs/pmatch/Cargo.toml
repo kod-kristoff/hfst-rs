@@ -11,3 +11,5 @@ hfst-ol = { path = "../hfst-ol" }
 log = "0.4.14"
 thiserror = "1.0.25"
 unicode-segmentation = "1.7.1"
+[profile.release]
+incremental = true

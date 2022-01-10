@@ -10,3 +10,5 @@ hfst-ol = { path = "../hfst-ol" }
 log = "0.4.14"
 nom = "7.1.0"
 thiserror = "1.0.25"
+[profile.release]
+incremental = true

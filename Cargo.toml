@@ -3,3 +3,5 @@ members = [
     "tools/*",
     "libs/*",
 ]
+[profile.release]
+incremental = true

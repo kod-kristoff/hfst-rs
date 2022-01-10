@@ -13,3 +13,5 @@ eyre = "0.6.5"
 log = "0.4.14"
 pmatch = { path = "../../libs/pmatch" }
 pmatch-serialize = { path = "../../libs/pmatch-serialize" }
+[profile.release]
+incremental = true
