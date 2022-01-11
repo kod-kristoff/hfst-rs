@@ -2,6 +2,7 @@ use std::{fs, io};
 
 use nom::IResult;
 use nom_bufreader::bufreader::BufReader as NomBufReader;
+use bufparser::BufReader;
 
 use hfst_fs::streaming::nullended_string;
 use pmatch::PmatchAlphabet;
@@ -24,7 +25,7 @@ pub fn alphabet_le(
 }
 
 pub fn parse_alphabet_le<R>(
-    reader: &mut NomBufReader<R>,
+    reader: &mut BufReader,
     symbol_count: u16,
 ) -> Result<PmatchAlphabet, PmatchHfst3Error>
 where
@@ -44,7 +45,7 @@ where
 }
 
 pub struct AlphabetParserLe {
-    symbol_count: u16, 
+    symbol_count: u16,
 }
 
 impl AlphabetParserLe {

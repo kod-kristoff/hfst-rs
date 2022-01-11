@@ -15,5 +15,3 @@ nom = { version = "7.1", features = ["alloc"] }
 nom-bufreader = { git = "https://github.com/rust-bakery/nom-bufreader", default-features = false }
 pmatch = { path = "../pmatch" }
 thiserror = "1.0.25"
-[profile.release]
-incremental = true

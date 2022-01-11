@@ -4,7 +4,7 @@ use std::io;
 use thiserror::Error;
 use nom_bufreader::bufreader::BufReader as NomBufReader;
 
-use bufparser::BufParser;
+use bufparser::BufReader;
 use hfst_fs::OwnedParseError;
 use hfst_ol::{Encoder, TransducerHeader};
 use hfst_ol_parser::{
@@ -118,19 +118,19 @@ impl PmatchHfst3 {
         let max_recursion = 5000;
         let need_separators = true;
         let xerox_composition = true;
-        
-        let mut reader = NomBufReader::new(file);
-        let mut parser = BufParser::new(file);
+
+        // let mut reader = NomBufReader::new(file);
+        let mut reader = BufReader::new(Box::new(file));
         let header: TransducerHeader = reader.parse(transducer_header_le)?;
             //parse_transducer_header_le(&mut file)?;
         let alphabet: PmatchAlphabet = parse_alphabet_le(
             &mut reader,
             header.symbol_count(),
-        )?; 
+        )?;
         // let alphabet: PmatchAlphabet = parse_alphabet_le(
         //     &mut file,
         //     header.symbol_count(),
-        // )?; 
+        // )?;
         let encoder = Encoder::from_alphabet(&alphabet);
         let toplevel: PmatchTransducer = parse_pmatch_transducer_le(
             &mut file,

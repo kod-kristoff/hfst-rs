@@ -10,5 +10,3 @@ byteorder = "1.4.3"
 log = "0.4.14"
 nom = { version = "7.1.0", features = ["alloc"] }
 thiserror = "1.0.25"
-[profile.release]
-incremental = true
