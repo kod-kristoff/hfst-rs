@@ -1,3 +1,4 @@
+pub mod implementations;
 mod transducer;
 
 pub use transducer::HfstTransducer;
